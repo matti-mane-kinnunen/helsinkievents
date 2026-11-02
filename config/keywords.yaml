@@ -43,6 +43,10 @@ categories:
       - music
       - concert
       - gig
+      - punk
+      - noise
+      - RSO
+
 
   esitykset:
     label: Esitykset
@@ -88,13 +92,15 @@ exclude:
   words:
     - kurssi
     - työpaja
-    - luento
     - workshop
-    - lecture
     - harjoitukset
     - opastus
     - kerho
     - leikkikoulu
     - lukupiiri
     - lukuklubi
-    - kirjaklubi
+    - vauva
+    - mummo
+    - karaoke
+    - perhe
+    - taapero
