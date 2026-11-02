@@ -40,7 +40,8 @@ config/sources.yaml ──► helevents.build ──► site/index.html + site/e
 
 | Path | What |
 |---|---|
-| `config/sources.yaml` | Sources, keyword filters, window length, site title |
+| `config/sources.yaml` | Sources, window length, site title, title excludes |
+| `config/keywords.yaml` | Which events are shown (categories + words) |
 | `events/manual/` | Hand-added events, one YAML file each |
 | `helevents/` | Python package: `build.py` (pipeline), `render.py` (HTML), `sources/*` |
 | `helevents/issue_to_event.py` | Turns a GitHub issue form into an event file |
@@ -85,6 +86,22 @@ Open **Issues → New issue → "Lisää tapahtuma"** and fill the form.
 ### 3. By hand
 Create a YAML file in `events/manual/` — format in
 [`events/manual/README.md`](events/manual/README.md).
+
+## Choosing which events are shown
+
+`config/keywords.yaml` decides what appears on the page. It has categories
+(currently **Musiikki**, **Esitykset**, **Avajaiset**), each with a list of words.
+An event is shown if a word from any category appears in its title or the
+source's own subject tags (openings also check the description), and none of the
+`exclude` words appear in the title. Words match inside longer words, so the stem
+`konsert` catches *Joulukonsertti*. Manually added events are always shown.
+
+* Add a word: put it on its own line under the right category.
+* Add a category: copy a block, give it a one-word key and a `label`.
+* Show everything: set `enabled: false`.
+
+Each category becomes a filter button on the page, and each event shows its
+category badges. Run `python -m helevents.validate` after editing.
 
 ## Adding sources
 

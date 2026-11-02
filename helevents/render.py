@@ -15,6 +15,7 @@ WD_SHORT = ["ma", "ti", "ke", "to", "pe", "la", "su"]
 MONTHS = ["tammikuuta", "helmikuuta", "maaliskuuta", "huhtikuuta", "toukokuuta", "kesäkuuta",
           "heinäkuuta", "elokuuta", "syyskuuta", "lokakuuta", "marraskuuta", "joulukuuta"]
 STATUS_LABEL = {"cancelled": "Peruttu", "postponed": "Siirretty"}
+_LABELS: dict[str, str] = {}   # category key -> label, set by render_page
 
 
 def fi_date(d: date, long: bool = True) -> str:
@@ -59,13 +60,14 @@ def card(ev: Event, day: date | None = None, show_date: bool = False) -> str:
     if ev.address:
         place = f"{place}<span class=\"addr\">, {e(ev.address)}</span>" if place else e(ev.address)
     search = " ".join([ev.title, ev.place, ev.address, ev.summary, " ".join(ev.tags)]).casefold()
-    return f"""<article class="event{' is-' + ev.status if ev.status != 'scheduled' else ''}" data-search="{e(search)}">
+    cats = "".join(f'<span class="cat">{e(_LABELS.get(c, c))}</span>' for c in ev.categories)
+    return f"""<article class="event{' is-' + ev.status if ev.status != 'scheduled' else ''}" data-search="{e(search)}" data-cats="{e(' '.join(ev.categories))}">
   <div class="when">{e(when)}</div>
   <div class="body">
     <h3>{status}{title}</h3>
     {f'<p class="place">{place}</p>' if place else ''}
     {f'<p class="summary">{e(ev.summary)}</p>' if ev.summary else ''}
-    <p class="meta">{e(ev.source)}</p>
+    <p class="meta">{cats}{e(ev.source)}</p>
   </div>
 </article>"""
 
@@ -80,6 +82,12 @@ def day_block(d: date, events: list[Event]) -> str:
 
 def render_page(res: "Result", cfg: dict) -> str:
     site = cfg.get("site", {})
+    _LABELS.clear()
+    _LABELS.update(cfg.get("_category_labels") or {})
+    chips = "".join(f'<button type="button" class="chip" data-cat="{e(k)}" aria-pressed="false">{e(v)}</button>'
+                    for k, v in _LABELS.items())
+    if chips:
+        chips = f'<div class="chips" role="group" aria-label="Rajaa aiheen mukaan">{chips}</div>'
     title = site.get("title", "Helsingin tapahtumat")
     repo = site.get("repo_url", "")
     today_cards = "\n".join(card(ev, res.today) for ev in res.today_events) or \
@@ -116,6 +124,7 @@ def render_page(res: "Result", cfg: dict) -> str:
     <p class="sub">Päivitetty {fi_date(gen.date())} klo {fi_time(gen)} · {len(res.today_events)} tänään · {total} tulossa {fi_date(res.window_end, long=False)} asti</p>
     <nav><a href="#tanaan">Tänään</a><a href="#tulevat">Tulevat</a>{'<a href="#kaynnissa">Pitkäkestoiset</a>' if res.ongoing else ''}{add_link}</nav>
     <input id="q" type="search" placeholder="Hae tapahtumia (nimi, paikka, aihe)…" aria-label="Hae tapahtumia">
+    {chips}
   </div>
 </header>
 <main class="wrap">
@@ -145,6 +154,7 @@ CSS = """
 :root{--bg:#f7f6f2;--fg:#1d1d1b;--muted:#6b6a64;--card:#fff;--line:#e3e1da;--accent:#0047b6;--today:#fff6d6;--bad:#b3261e}
 @media (prefers-color-scheme:dark){:root{--bg:#141413;--fg:#ecebe6;--muted:#a3a29b;--card:#1f1f1d;--line:#34332f;--accent:#8ab4ff;--today:#2a2617;--bad:#ff8a80}}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 a{color:var(--accent)}
 .wrap{max-width:860px;margin:0 auto;padding:0 16px}
@@ -167,6 +177,10 @@ nav{display:flex;gap:14px;flex-wrap:wrap;font-size:.95rem;margin-bottom:8px}
 .addr{color:var(--muted)}
 .summary{font-size:.92rem;color:var(--fg);opacity:.9}
 .meta{font-size:.75rem;color:var(--muted)}
+.cat{display:inline-block;font-size:.72rem;padding:0 6px;margin-right:6px;border-radius:4px;border:1px solid var(--line);color:var(--fg)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font:inherit;font-size:.85rem;padding:3px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--card)}
 .badge{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:4px;background:var(--bad);color:#fff;vertical-align:2px}
 .is-cancelled h3 a,.is-cancelled h3{text-decoration:line-through}
 .is-cancelled .badge{text-decoration:none;display:inline-block}
@@ -204,12 +218,20 @@ JS = r"""
     n.textContent='Huom: sivun tiedot ovat päivältä '+built.split('-').reverse().map(Number).join('.')+'. Uusin päivitys ei ole vielä onnistunut.';
   }
   var q=document.getElementById('q'),cards=[].slice.call(document.querySelectorAll('.event'));
-  q.addEventListener('input',function(){
+  var chips=[].slice.call(document.querySelectorAll('.chip'));
+  chips.forEach(function(b){b.addEventListener('click',function(){
+    b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')==='true'?'false':'true');apply();})});
+  q.addEventListener('input',apply);
+  function apply(){
     var t=q.value.trim().toLowerCase(),any=false;
-    cards.forEach(function(c){var m=!t||c.dataset.search.indexOf(t)>=0;c.hidden=!m;any=any||m});
+    var sel=chips.filter(function(b){return b.getAttribute('aria-pressed')==='true'}).map(function(b){return b.dataset.cat});
+    cards.forEach(function(c){
+      var cs=(c.dataset.cats||'').split(' ');
+      var m=(!t||c.dataset.search.indexOf(t)>=0)&&(!sel.length||sel.some(function(k){return cs.indexOf(k)>=0}));
+      c.hidden=!m;any=any||m});
     document.querySelectorAll('section.day').forEach(function(s){s.hidden=!s.querySelector('.event:not([hidden])')});
     var o=document.querySelector('details.ongoing');if(o&&t)o.open=true;
     document.getElementById('noresults').hidden=any;
-  });
+  }
 })();
 """

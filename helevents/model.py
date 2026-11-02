@@ -24,6 +24,8 @@ class Event:
     status: str = "scheduled"       # scheduled | cancelled | postponed
     source_id: str = ""             # id in the original source, if any
     tags: list[str] = field(default_factory=list)
+    categories: list[str] = field(default_factory=list)   # keys from config/keywords.yaml
+    source_type: str = ""           # manual | linkedevents | ical | jsonld
 
     def __post_init__(self) -> None:
         self.start = to_local(self.start)

@@ -33,7 +33,8 @@ Status: 🔴 important · 🟡 normal · ⚪ idea. Move items to "Done" with a d
 ## Ideas / features
 - 🟡 B-11 More sources: venue iCal feeds, JSON-LD pages (e.g. clubs, theatres),
   Tiketti/Lippupiste (check terms of use), university/HSY calendars.
-- 🟡 B-12 Category chips / filters (music, theatre, film…) using source keywords.
+- ⚪ B-21 Day headers show the total count even when a filter button / search hides
+  some events; update counts client-side.
 - ⚪ B-13 Optional Claude API summaries (D-5 alternative) for sources with poor text.
 - ⚪ B-14 Publish `events.ics` so the list can be subscribed to in a calendar app.
 - ⚪ B-15 Free/price info (Linked Events `offers`).
@@ -41,5 +42,8 @@ Status: 🔴 important · 🟡 normal · ⚪ idea. Move items to "Done" with a d
 - ⚪ B-17 A Claude skill for "add event from a link" (fetch page → YAML → PR).
 
 ## Done
+- 2026-11-02 B-12 Category filter buttons (from keywords.yaml) and badges on cards.
+- 2026-11-02 Keyword include filter `config/keywords.yaml` (music, performances, openings).
+- 2026-11-02 Fixed: search box did not hide cards (CSS `display:grid` overrode `hidden`).
 - 2026-11-02 Initial version: sources (manual, Linked Events, iCal, JSON-LD), page,
   nightly build, issue form, docs, tests.

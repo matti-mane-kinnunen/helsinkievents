@@ -203,3 +203,62 @@ def test_full_build(tmp_path, fake_api, monkeypatch):
     assert names["Unknown"]["ok"] is False
     assert names["Broken"]["ok"] is True and names["Broken"]["count"] == 0  # per-URL failure tolerated
     assert len(res.today_events) == 3  # manual + jazz + weekly jam on 2.11
+
+
+# ---------------------------------------------------------------- keyword filter
+from helevents.keywords import KeywordFilter  # noqa: E402
+
+KW = {
+    "categories": {
+        "musiikki": {"label": "Musiikki", "words": ["konsert", "jazz", r"re:\bdj\b"]},
+        "avajaiset": {"label": "Avajaiset", "match_in": ["title", "summary"], "words": ["avajais"]},
+    },
+    "exclude": {"words": ["työpaja"]},
+}
+
+
+def test_keyword_filter():
+    t = datetime(2026, 11, 5, 19, tzinfo=TZ)
+    evs = [
+        ev("Joulukonsertti", t),                                  # stem match in title
+        ev("Ilta", t, tags=["Jazz"]),                             # tag match
+        ev("Näyttely X", t, summary="Tervetuloa avajaisiin!"),    # summary match
+        ev("Jazz-työpaja", t),                                    # excluded
+        ev("Luento", t, summary="konsertti jälkeen"),             # summary not searched for music
+        ev("Djurgården-ilta", t),                                 # regex word boundary
+        ev("Oma juttu", t, source_type="manual"),                 # manual bypasses filter
+    ]
+    kept = KeywordFilter(KW).apply(evs)
+    assert [e.title for e in kept] == ["Joulukonsertti", "Ilta", "Näyttely X", "Oma juttu"]
+    assert kept[0].categories == ["musiikki"] and kept[2].categories == ["avajaiset"]
+
+
+def test_keyword_filter_disabled_and_bad_field():
+    t = datetime(2026, 11, 5, 19, tzinfo=TZ)
+    assert len(KeywordFilter({**KW, "enabled": False}).apply([ev("Mitä tahansa", t)])) == 1
+    with pytest.raises(ValueError):
+        KeywordFilter({"categories": {"x": {"match_in": ["nope"], "words": ["a"]}}})
+
+
+def test_repo_keywords_file_is_valid():
+    kw = KeywordFilter.load(Path(__file__).parent.parent / "config" / "keywords.yaml")
+    assert {"musiikki", "esitykset", "avajaiset"} <= set(kw.labels)
+    t = datetime(2026, 11, 5, 19, tzinfo=TZ)
+    kept = kw.apply([ev("Sinfoniakonsertti", t), ev("Nykytanssin ensi-ilta", t),
+                     ev("Valokuvanäyttelyn avajaiset", t), ev("Kirjaston satutunti", t),
+                     ev("Tanssikurssi aikuisille", t)])
+    assert [e.title for e in kept] == ["Sinfoniakonsertti", "Nykytanssin ensi-ilta",
+                                       "Valokuvanäyttelyn avajaiset"]
+
+
+def test_build_with_keywords_renders_chips(tmp_path, fake_api):
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "keywords.yaml").write_text(yaml.safe_dump(KW))
+    cfg = {"window_days": 31, "filters": {}, "keywords_file": "config/keywords.yaml",
+           "sources": [{"type": "linkedevents", "name": "LE", "delay": 0}]}
+    build.build(cfg, TODAY, tmp_path / "site", tmp_path)
+    html = (tmp_path / "site" / "index.html").read_text()
+    assert 'class="chip" data-cat="musiikki"' in html
+    assert "Jazz-konsertti" in html                 # title contains "konsert"
+    assert "Iso näyttely" not in html                # no matching word
+    assert 'data-cats="musiikki"' in html

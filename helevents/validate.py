@@ -7,7 +7,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import re
+
 from .build import ROOT, load_config
+from .keywords import KeywordFilter
 from .sources import REGISTRY
 from .sources.manual import load_dir
 
@@ -22,6 +25,18 @@ def main() -> int:
             errors.append(f"config: ical source {s.get('name')!r} needs url")
         if s.get("type") == "jsonld" and not (s.get("url") or s.get("urls")):
             errors.append(f"config: jsonld source {s.get('name')!r} needs url(s)")
+    try:
+        kw = KeywordFilter.load(ROOT / cfg["keywords_file"])
+        if kw is None:
+            errors.append(f"config: keywords file {cfg['keywords_file']} not found")
+        else:
+            for c in kw.categories:
+                if not re.fullmatch(r"[\w-]+", c.key):
+                    errors.append(f"keywords: category key {c.key!r} must be a single word")
+                if not c.patterns:
+                    errors.append(f"keywords: category {c.key!r} has no words")
+    except (ValueError, re.error) as e:
+        errors.append(f"keywords: {e}")
     events, errs = load_dir(ROOT / "events" / "manual")
     errors += errs
     for e in errors:

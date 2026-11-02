@@ -1,0 +1,100 @@
+# Which events are shown on the page.
+#
+# An event is shown if it matches at least ONE word in ANY category below,
+# and matches none of the "exclude" words.
+#
+# How matching works:
+#   * case-insensitive, and a word may be part of a longer word:
+#     "konsert" matches "Joulukonsertti", "konsertit" and "konserttisarja".
+#     Use word stems for Finnish (e.g. "avajais" catches avajaiset/avajaisiin).
+#   * match_in: where to look. Options: title, tags, summary, place.
+#     "tags" = the source's own subject keywords (e.g. Linked Events "musiikki").
+#     Default: [title, tags]. Adding summary finds more but also more noise.
+#   * a word starting with "re:" is a regular expression; write it in single
+#     quotes, e.g. 're:\bjazz\b' (\b = word boundary).
+#   * Events added by hand (events/manual/) are ALWAYS shown.
+#
+# Category keys (musiikki, esitykset, …) must be single words; "label" is shown
+# on the page as a filter button. Set enabled: false to show everything.
+
+enabled: true
+
+categories:
+  musiikki:
+    label: Musiikki
+    match_in: [title, tags]
+    words:
+      - musiikki
+      - konsert          # konsertti, konsertit
+      - keikka
+      - keikat
+      - jazz
+      - blues
+      - rock
+      - klubi
+      - kuoro
+      - orkesteri
+      - sinfonia
+      - kamarimusiik
+      - laulu
+      - festivaali
+      - 're:\bdj\b'       # whole word only
+      - 're:\blive\b'
+      - music
+      - concert
+      - gig
+
+  esitykset:
+    label: Esitykset
+    match_in: [title, tags]
+    words:
+      - esitys
+      - esitykset
+      - teatteri
+      - teatteritaide
+      - näytelmä
+      - ensi-ilta
+      - tanssi
+      - baletti
+      - ooppera
+      - operetti
+      - musikaali
+      - sirkus
+      - stand up
+      - stand-up
+      - standup
+      - improvisaatio
+      - impro
+      - performanssi
+      - kabaree
+      - lausunta
+      - runoilta
+      - performance
+      - theatre
+      - dance
+
+  avajaiset:
+    label: Avajaiset
+    match_in: [title, tags, summary]   # openings are often only mentioned in the description
+    words:
+      - avajais          # avajaiset, avajaisiin, avajaistilaisuus
+      - vernissa         # vernissaasi
+      - opening
+      - näyttely avautuu
+      - näyttelyn avaus
+
+exclude:
+  match_in: [title]
+  words:
+    - kurssi
+    - työpaja
+    - luento
+    - workshop
+    - lecture
+    - harjoitukset
+    - opastus
+    - kerho
+    - leikkikoulu
+    - lukupiiri
+    - lukuklubi
+    - kirjaklubi

@@ -9,6 +9,7 @@ site:
   repo_url: https://github.com/matti-mane-kinnunen/helsinkievents
 
 window_days: 31          # "next month" = today + 31 days
+keywords_file: config/keywords.yaml   # which events to show (music, performances, openings…)
 
 filters:
   max_event_days: 7      # longer events (exhibitions…) go to the collapsible "Pitkäkestoiset" section
@@ -26,7 +27,8 @@ sources:
     path: events/manual
 
   # City of Helsinki open event API (also feeds tapahtumat.hel.fi / MyHelsinki).
-  # Server-side filter: events in Helsinki tagged with ANY of these YSO keywords.
+  # Server-side pre-filter: events in Helsinki tagged with ANY of these YSO keywords.
+  # The final selection is made by config/keywords.yaml.
   # Keyword ids can be looked up at https://api.hel.fi/linkedevents/v1/keyword/?text=musiikki
   - type: linkedevents
     name: Helsingin kaupunki (Linked Events)
@@ -40,7 +42,6 @@ sources:
         - yso:p11185   # konsertit
         - yso:p2625    # teatteritaide
         - yso:p1278    # tanssi
-        - yso:p1235    # elokuvat
         - yso:p5121    # näyttelyt
         - yso:p360     # kulttuuritapahtumat
     # Drop events tagged with any of these keyword ids (client-side)

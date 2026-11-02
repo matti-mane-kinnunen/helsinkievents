@@ -67,3 +67,16 @@ script via an environment variable (no shell interpolation → no script injecti
 ### D-13 · 2026-11-02 · Code delivered via the user's local clone
 The development session had no push rights to the repository; files were written to
 the local clone (`~/Code/helsinkievents`) and the user commits/pushes.
+
+### D-14 · 2026-11-02 · Include-keyword file `config/keywords.yaml` decides what is shown
+User asked for music, performances and openings only. Categories with plain word stems
+(substring, case-insensitive; `re:` for regex) are matched against title + source tags
+(summary too for openings, where the word is often only in the description), plus an
+exclude list. Applied to all sources after fetching, so iCal/JSON-LD sources follow the
+same rules. Manual events bypass the filter (they were added on purpose). Categories also
+drive badges and filter buttons on the page.
+*Alternatives:* only Linked Events server-side YSO keywords (too coarse, misses
+openings, source-specific); Claude-based classification (cost, non-deterministic).
+*Consequence:* the Linked Events YSO keyword list is now only a pre-filter to keep API
+volume down; film (yso:p1235) was removed from it.
+

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import yaml
 
+from .keywords import KeywordFilter
 from .model import TZ, Event
 from .render import render_page
 from .sources import REGISTRY
@@ -49,6 +50,7 @@ def load_config(path: Path) -> dict:
     cfg.setdefault("window_days", 31)
     cfg.setdefault("sources", [])
     cfg.setdefault("filters", {})
+    cfg.setdefault("keywords_file", "config/keywords.yaml")
     return cfg
 
 
@@ -69,6 +71,8 @@ def collect(cfg: dict, today: date, root: Path = ROOT) -> tuple[list[Event], lis
             continue
         try:
             got = fetch({**scfg, "_root": str(root)}, today, window_end)
+            for ev in got:
+                ev.source_type = kind
             log.info("%-40s %5d events", name, len(got))
             stats.append({"name": name, "type": kind, "ok": True, "count": len(got)})
             if not got and kind != "manual":
@@ -134,7 +138,12 @@ def organise(events: list[Event], today: date, window_days: int,
 
 def build(cfg: dict, today: date, out: Path, root: Path = ROOT) -> Result:
     raw, stats = collect(cfg, today, root)
-    events = dedupe(apply_filters(raw, cfg["filters"]))
+    events = apply_filters(raw, cfg["filters"])
+    kw = KeywordFilter.load(root / cfg["keywords_file"]) if cfg.get("keywords_file") else None
+    if kw:
+        events = kw.apply(events)
+        cfg = {**cfg, "_category_labels": kw.labels}
+    events = dedupe(events)
     res = organise(events, today, int(cfg["window_days"]),
                    int(cfg["filters"].get("max_event_days", 7)))
     res.source_stats = stats
