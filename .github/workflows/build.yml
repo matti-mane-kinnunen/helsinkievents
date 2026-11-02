@@ -1,0 +1,56 @@
+name: Build and deploy page
+
+on:
+  schedule:
+    # Every night at 03:00 Finnish time (GitHub handles summer/winter time).
+    - cron: "0 3 * * *"
+      timezone: "Europe/Helsinki"
+  workflow_dispatch:          # manual "Run workflow" button; also used by add-event.yml
+  push:
+    branches: [main]
+    paths:
+      - "config/**"
+      - "events/**"
+      - "helevents/**"
+      - "requirements.txt"
+      - ".github/workflows/build.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - name: Unit tests
+        run: python -m pytest -q
+      - name: Validate manual events
+        run: python -m helevents.validate
+      - name: Build page
+        run: python -m helevents.build --out site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

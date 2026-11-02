@@ -1,0 +1,61 @@
+name: Lisää tapahtuma
+description: Ehdota tapahtumaa Helsingin tapahtumasivulle
+title: "Tapahtuma: "
+labels: ["tapahtuma"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Täytä tiedot. Repositorion omistajan/ylläpitäjien lisäämät tapahtumat julkaistaan
+        automaattisesti; muiden ehdotukset julkaistaan, kun ylläpitäjä lisää tunnisteen `hyväksytty`.
+  - type: input
+    id: title
+    attributes:
+      label: Tapahtuman nimi
+      placeholder: Jazz-ilta Savoyssa
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Päivämäärä
+      description: Muoto 2026-11-14 tai 14.11.2026
+    validations:
+      required: true
+  - type: input
+    id: time
+    attributes:
+      label: Alkamisaika
+      description: Esim. 19:00. Jätä tyhjäksi, jos koko päivän tapahtuma.
+  - type: input
+    id: end_date
+    attributes:
+      label: Päättymispäivä
+      description: Vain monipäiväisille tapahtumille.
+  - type: input
+    id: end_time
+    attributes:
+      label: Päättymisaika
+      description: Esim. 22:00
+  - type: input
+    id: place
+    attributes:
+      label: Paikka
+      placeholder: Savoy-teatteri
+    validations:
+      required: true
+  - type: input
+    id: address
+    attributes:
+      label: Osoite
+      placeholder: Kasarmikatu 46-48
+  - type: input
+    id: url
+    attributes:
+      label: Linkki
+      placeholder: https://…
+  - type: textarea
+    id: summary
+    attributes:
+      label: Kuvaus
+      description: Lyhyt kuvaus, 1–3 lausetta.

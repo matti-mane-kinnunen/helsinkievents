@@ -1,0 +1,11 @@
+{
+ "meta": {"count": 4, "next": null, "previous": "x"},
+ "data": [
+  {"id": "helsinki:expo", "name": {"fi": "Iso näyttely"}, "short_description": {"fi": "Koko syksyn näyttely."},
+   "start_time": "2026-09-01T07:00:00Z", "end_time": "2027-01-10T16:00:00Z",
+   "location": {"name": {"fi": "Ateneum"}}, "keywords": [{"id": "yso:p5121", "name": {"fi": "näyttelyt"}}]},
+  {"id": "helsinki:kids", "name": {"fi": "Satutunti kirjastossa"}, "short_description": {"fi": "Lapsille"},
+   "start_time": "2026-11-03T08:00:00Z", "end_time": "2026-11-03T09:00:00Z",
+   "location": {"name": {"fi": "Oodi"}}, "keywords": [{"id": "yso:p4354", "name": {"fi": "lapset"}}]}
+ ]
+}

@@ -1,0 +1,61 @@
+# Helsinki events – configuration
+#
+# Sources are processed in order. When the same event (same title, start time
+# and place) comes from several sources, the FIRST source wins, so manual
+# events are listed first.
+
+site:
+  title: Helsingin tapahtumat
+  repo_url: https://github.com/matti-mane-kinnunen/helsinkievents
+
+window_days: 31          # "next month" = today + 31 days
+
+filters:
+  max_event_days: 7      # longer events (exhibitions…) go to the collapsible "Pitkäkestoiset" section
+  hide_cancelled: false  # cancelled events are shown with a "Peruttu" badge
+  # Regular expressions (case-insensitive) matched against the title
+  exclude_title:
+    - "satutunti|vauvatreffit|vauvajumppa|perhekahvila"
+    - "lukupiiri|kerho\\b|läksyapu|läksyhelppi|digituki|digiopastus|kielikahvila|kielikahvi"
+    - "neulekahvila|neuletapaaminen|pelikerho|lego"
+  exclude_place: []
+
+sources:
+  - type: manual
+    name: Lisätty käsin
+    path: events/manual
+
+  # City of Helsinki open event API (also feeds tapahtumat.hel.fi / MyHelsinki).
+  # Server-side filter: events in Helsinki tagged with ANY of these YSO keywords.
+  # Keyword ids can be looked up at https://api.hel.fi/linkedevents/v1/keyword/?text=musiikki
+  - type: linkedevents
+    name: Helsingin kaupunki (Linked Events)
+    enabled: true
+    max_pages: 60
+    summary_length: 220
+    params:
+      division: helsinki
+      keyword:
+        - yso:p1808    # musiikki
+        - yso:p11185   # konsertit
+        - yso:p2625    # teatteritaide
+        - yso:p1278    # tanssi
+        - yso:p1235    # elokuvat
+        - yso:p5121    # näyttelyt
+        - yso:p360     # kulttuuritapahtumat
+    # Drop events tagged with any of these keyword ids (client-side)
+    exclude_keywords: []
+
+  # Example: any iCalendar feed (venue calendars, Google Calendar public .ics, …)
+  - type: ical
+    name: Esimerkki-iCal
+    enabled: false
+    url: https://example.org/calendar.ics
+    default_place: ""
+
+  # Example: web pages that embed schema.org Event JSON-LD (many venue/ticket sites)
+  - type: jsonld
+    name: Esimerkki-verkkosivu
+    enabled: false
+    urls:
+      - https://example.org/tapahtumat

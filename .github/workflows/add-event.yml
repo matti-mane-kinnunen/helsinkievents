@@ -1,0 +1,82 @@
+name: Add event from issue
+
+# An issue created with the "Lisää tapahtuma" form becomes a YAML file in
+# events/manual/. Issues by the owner/collaborators are processed immediately;
+# anyone else's suggestion is processed when a maintainer adds the label
+# "hyväksytty" (approved).
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+  actions: write   # to start the build workflow
+
+concurrency:
+  group: add-event-${{ github.event.issue.number }}
+
+jobs:
+  add:
+    if: >-
+      contains(github.event.issue.labels.*.name, 'tapahtuma') && (
+        (github.event.action == 'opened' &&
+         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+        ||
+        (github.event.action == 'labeled' && github.event.label.name == 'hyväksytty')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Convert issue to event file
+        id: convert
+        env:
+          BODY: ${{ github.event.issue.body }}   # passed via env, never interpolated into the script
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
+          if path=$(python -m helevents.issue_to_event --body-file "$RUNNER_TEMP/body.md" --issue "$ISSUE" 2> "$RUNNER_TEMP/err.txt"); then
+            echo "path=$path" >> "$GITHUB_OUTPUT"
+          else
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report error
+        if: steps.convert.outputs.failed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          {
+            echo "Tapahtumaa ei voitu lisätä:"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/err.txt"
+            echo '```'
+            echo
+            echo "Korjaa issueta (Edit) ja lisää sitten tunniste \`hyväksytty\` uudelleen, tai pyydä ylläpitäjää lisäämään tapahtuma."
+          } > "$RUNNER_TEMP/comment.md"
+          gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
+          exit 1
+
+      - name: Commit, close issue, rebuild page
+        if: steps.convert.outputs.path != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          FILE: ${{ steps.convert.outputs.path }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$FILE"
+          git commit -m "Lisää tapahtuma issuesta #$ISSUE" -m "Closes #$ISSUE"
+          git push
+          gh issue comment "$ISSUE" --body "Lisätty tiedostoon \`$FILE\`. Sivu päivittyy muutaman minuutin kuluttua."
+          gh issue close "$ISSUE"
+          gh workflow run build.yml --ref main
