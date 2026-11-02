@@ -26,6 +26,9 @@ Status: 🔴 important · 🟡 normal · ⚪ idea. Move items to "Done" with a d
   Could add a monthly keep-alive commit or rely on manual re-enable.
 - ⚪ B-9 Housekeeping workflow that deletes past manual events (e.g. older than 30 days).
 - ⚪ B-10 Pin GitHub Actions to commit SHAs.
+- 🟡 B-18 First run (2026-11-02) warned "Node.js 20 is deprecated": bump actions
+  (checkout, setup-python, configure-pages, upload-pages-artifact, deploy-pages) to
+  their latest Node 24 majors. Also note: `ubuntu-latest` moves to Ubuntu 26.
 
 ## Ideas / features
 - 🟡 B-11 More sources: venue iCal feeds, JSON-LD pages (e.g. clubs, theatres),
